@@ -44,6 +44,5 @@ def page_name_post():
     import_listen_history(data)
     return jsonify(data)
 
-
 if __name__ == '__main__':
    app.run(debug=True)

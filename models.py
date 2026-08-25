@@ -11,7 +11,7 @@ class User(Base):
 
     streams: Mapped[list['Stream']] = relationship()
 
-    username = db.Column(db.String(255), unique=True, nullable=False)
+    username = db.Column(db.String(255), unique=True)
     spotify_id = db.Column(db.String(255), unique=True)
 
 class Stream(Base):
@@ -19,7 +19,7 @@ class Stream(Base):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    user_id: Mapped[int] = mapped_column(db.ForeignKey('users.id'),nullable=True)
+    user_id: Mapped[int] = mapped_column(db.ForeignKey('users.id'))
     user: Mapped['User'] = relationship(back_populates='streams')
     
     track_id: Mapped[int] = mapped_column(db.ForeignKey('tracks.id'))
@@ -35,20 +35,21 @@ class Stream(Base):
     incognito_mode = db.Column(db.Boolean)
 
 class Track(Base):
+    # Largely nullable - except for ID and Spotify ID. The rest will be filled out after the Spotify API calls.
     __tablename__ = 'tracks'
 
     id = db.Column(db.Integer, primary_key=True)
 
-    album_id: Mapped[int] = mapped_column(db.ForeignKey('albums.id'))
+    album_id: Mapped[int] = mapped_column(db.ForeignKey('albums.id'), nullable=True)
     album: Mapped['Album'] = relationship(back_populates='tracks')
 
     streams: Mapped[list['Stream']] = relationship()
 
     artists = relationship('Artist', secondary='track_artists', back_populates='tracks')
 
-    name = db.Column(db.String(255))
-    disc_number = db.Column(db.Integer)
-    track_number = db.Column(db.Integer)
+    name = db.Column(db.String(255), nullable=True)
+    disc_number = db.Column(db.Integer, nullable=True)
+    track_number = db.Column(db.Integer, nullable=True)
     spotify_id = db.Column(db.String(255), unique=True)
 
 class Album(Base):
@@ -100,13 +101,26 @@ Session = sessionmaker(bind=engine)
 def init_db():
     Base.metadata.create_all(engine)
 
-def import_listen_history(data):
+def import_listen_history(data,user_id=1):
     with Session.begin() as session:
         for history_file in data:
             for stream in history_file:
-                entry = Stream(
-                #user=user,
-                track_id=str(stream['spotify_track_uri']).rsplit(':')[-1],
+
+                spotify_id = str(stream['spotify_track_uri']).rsplit(':')[-1]
+
+                # Check if track exists. If it doesn't, add the Spotify ID to the Tracks table.
+                track = session.query(Track).filter(
+                    Track.spotify_id == spotify_id
+                ).first()
+
+                if not track:
+                    track = Track(spotify_id=spotify_id)
+                    session.add(track)
+                    session.flush()
+
+                stream_entry = Stream(
+                user_id=user_id,
+                track_id=track.id,
                 timestamp=datetime.fromisoformat(stream['ts']),
                 ms_played=stream['ms_played'],
                 platform=stream['platform'],
@@ -116,4 +130,17 @@ def import_listen_history(data):
                 reason_end=stream['reason_end'],
                 incognito_mode=stream['incognito_mode']
                 )
-                session.add(entry)
+                session.add(stream_entry)
+
+def create_test_user():
+    with Session.begin() as session:
+        user = session.query(User).filter(
+            User.id == 1
+        ).first()
+
+        if not user:
+            user_entry = User(
+                username = 'Test User',
+                spotify_id = 'testid12345'            
+            )
+            session.add(user_entry)
