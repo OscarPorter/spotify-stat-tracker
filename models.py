@@ -132,6 +132,12 @@ def import_listen_history(data,user_id=1):
                 )
                 session.add(stream_entry)
 
+def update_track(data,spotify_id):
+    with Session.begin() as session:
+        pass
+        
+        
+
 def create_test_user():
     with Session.begin() as session:
         user = session.query(User).filter(
