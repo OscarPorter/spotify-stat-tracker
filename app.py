@@ -3,9 +3,9 @@ from flask import Flask, render_template, redirect, request, jsonify
 import os
 from dotenv import load_dotenv
 
-import json, urllib, uuid, requests
+import json, urllib, uuid, requests, time
 
-from models import import_listen_history, init_db
+from models import init_db, import_listen_history, fetch_all_missing_data
 
 load_dotenv()
 
@@ -75,36 +75,20 @@ def callback():
     code = request.args.get('code')
     credentials = get_access_token(code)
     os.environ['token'] = credentials['access_token']
-    return redirect('/your-music')
+    return redirect('/your-stats')
 
-@app.route('/your-music')
-def your_music():
-    user_profile_url = 'https://api.spotify.com/v1/me?'
-    user_top_items_url = 'https://api.spotify.com/v1/me/top/'
-    audio_features_url = 'https://api.spotify.com/v1/audio-features/'
-    limit_tracks = 18
-    # NB: Add the access token to the request header
+@app.route('/your-stats')
+def get_track():
+    fetch_all_missing_data(fetch_track)
+
+def fetch_track(id):
+    track_url = f'https://api.spotify.com/v1/tracks/{id}'
     headers = {
-    'Authorization': f'Bearer {os.getenv("token")}'
-    }
-    request_params_artists = {
-    'limit':18
-    }
-    request_params_tracks = {
-    'limit': 18
-    }
-    #Retrieving User details via GET request to user profile endpoint
-    user_profile = requests.get(user_profile_url, headers=headers)
-    if user_profile.status_code == 200:
-        user_profile = user_profile.json()
-        display_name = user_profile['display_name']
-        #Retrieving top Artists details via GET request to top artists endpoint
-        top_artists_url = user_top_items_url + 'artists?' + urllib.parse.urlencode(request_params_artists)
-        artists = requests.get(top_artists_url, headers=headers)
-    if artists.status_code == 200:
-        artists = artists.json()
-        artists = artists['items']
-    return jsonify(artists)
+        'Authorization': f'Bearer {os.getenv("token")}'
+        }
+    response = requests.get(track_url, headers=headers)
+    time.sleep(5)
+    return response.json()
 
 if __name__ == '__main__':
    app.run(debug=True)

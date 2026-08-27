@@ -62,6 +62,7 @@ class Album(Base):
     artists = relationship('Artist', secondary='album_artists', back_populates='albums')
 
     name = db.Column(db.String(255))
+    album_type = db.Column(db.String(50), nullable=True)
     release_date = db.Column(db.Date)
     icon_uri = db.Column(db.String(255))
     spotify_id = db.Column(db.String(255), unique=True)
@@ -75,7 +76,6 @@ class Artist(Base):
     albums = relationship('Album', secondary='album_artists', back_populates='artists')
 
     name = db.Column(db.String(255))
-    icon_uri = db.Column(db.String(255))
     spotify_id = db.Column(db.String(255), unique=True)
 
 class TrackArtists(Base):
@@ -100,6 +100,12 @@ Session = sessionmaker(bind=engine)
 
 def init_db():
     Base.metadata.create_all(engine)
+    album_columns = {column['name'] for column in db.inspect(engine).get_columns('albums')}
+    if 'album_type' not in album_columns:
+        with engine.begin() as connection:
+            connection.execute(db.text(
+                'ALTER TABLE albums ADD COLUMN album_type VARCHAR(50)'
+            ))
 
 def import_listen_history(data,user_id=1):
     with Session.begin() as session:
@@ -132,21 +138,114 @@ def import_listen_history(data,user_id=1):
                 )
                 session.add(stream_entry)
 
-def update_track(data,spotify_id):
-    with Session.begin() as session:
-        pass
-        
-        
+def parse_release_date(value):
+    if not value:
+        return None
 
-def create_test_user():
-    with Session.begin() as session:
-        user = session.query(User).filter(
-            User.id == 1
-        ).first()
+    for fmt in ("%Y-%m-%d", "%Y-%m", "%Y"):
+        try:
+            return datetime.strptime(value, fmt).date()
+        except ValueError:
+            continue
 
-        if not user:
-            user_entry = User(
-                username = 'Test User',
-                spotify_id = 'testid12345'            
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
+
+def get_or_create_album(session, album_data):
+    if not album_data or not album_data.get('id'):
+        return None
+
+    album = session.query(Album).filter(Album.spotify_id == album_data['id']).first()
+    if not album:
+        album = Album(spotify_id=album_data['id'])
+        session.add(album)
+        session.flush()
+
+    album.name = album_data.get('name') or album.name
+    album.album_type = album_data.get('album_type') or album.album_type
+    album.release_date = parse_release_date(album_data.get('release_date')) or album.release_date
+
+    images = album_data.get('images') or []
+    if images and images[0].get('url'):
+        album.icon_uri = images[0]['url']
+
+    return album
+
+def get_or_create_artist(session, artist_data):
+    spotify_id = artist_data.get('id')
+    if not spotify_id:
+        return None
+
+    artist = session.query(Artist).filter(Artist.spotify_id == spotify_id).first()
+    if not artist:
+        artist = Artist(spotify_id=spotify_id)
+        session.add(artist)
+        session.flush()
+
+    artist.name = artist_data.get('name') or artist.name
+
+    images = artist_data.get('images') or []
+    if images and images[0].get('url'):
+        artist.icon_uri = images[0]['url']
+
+    return artist
+
+def fetch_all_missing_data(fetch_track):
+    with Session() as session:
+        tracks = session.query(Track.id, Track.spotify_id).filter(
+            db.or_(
+                Track.name.is_(None),
+                Track.album_id.is_(None),
+                Track.disc_number.is_(None),
+                Track.track_number.is_(None),
             )
-            session.add(user_entry)
+        ).all()
+
+    for track_id, spotify_id in tracks:
+        with Session.begin() as track_session:
+            track_record = track_session.query(Track).filter_by(id=track_id).one()
+
+            track_data = dict(fetch_track(spotify_id)) # Explicit dict typing for type hints
+
+            if 'error' in track_data:
+                status = track_data['error']['status']
+                print('Track successfully fetched!')
+                if status in (401, 403):
+                    raise Exception('Bad/expired token or bad OAuth request.')
+                elif status == 429:
+                    raise Exception('The app has exceeded its rate limits.')
+                continue
+            else:
+                print('Track successfully fetched!')
+
+            track_record.name = track_data.get('name') or track_record.name
+            track_record.disc_number = track_data.get('disc_number', track_record.disc_number)
+            track_record.track_number = track_data.get('track_number', track_record.track_number)
+
+            album_data = track_data.get('album')
+            if album_data:
+                album = get_or_create_album(track_session, album_data)
+                if album:
+                    track_record.album_id = album.id
+
+                    for artist_data in album_data.get('artists', []):
+                        artist = get_or_create_artist(track_session, artist_data)
+                        if artist and not track_session.query(AlbumArtists).filter_by(
+                            album_id=album.id,
+                            artist_id=artist.id
+                        ).first():
+                            track_session.add(AlbumArtists(album_id=album.id, artist_id=artist.id))
+                            track_session.flush()
+
+            for artist_data in track_data.get('artists', []):
+                artist = get_or_create_artist(track_session, artist_data)
+                if artist and not track_session.query(TrackArtists).filter_by(
+                    track_id=track_record.id,
+                    artist_id=artist.id
+                ).first():
+                    track_session.add(TrackArtists(track_id=track_record.id, artist_id=artist.id))
+                    track_session.flush()
+
+            track_session.flush()
