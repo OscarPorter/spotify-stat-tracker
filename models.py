@@ -48,8 +48,10 @@ class Track(Base):
     artists = relationship('Artist', secondary='track_artists', back_populates='tracks')
 
     name = db.Column(db.String(255), nullable=True)
+    duration_ms = db.Column(db.Integer, nullable=True)
     disc_number = db.Column(db.Integer, nullable=True)
     track_number = db.Column(db.Integer, nullable=True)
+    explicit = db.Column(db.Boolean, nullable=True)
     spotify_id = db.Column(db.String(255), unique=True)
 
 class Album(Base):
@@ -62,7 +64,8 @@ class Album(Base):
     artists = relationship('Artist', secondary='album_artists', back_populates='albums')
 
     name = db.Column(db.String(255))
-    album_type = db.Column(db.String(50), nullable=True)
+    album_type = db.Column(db.String(50))
+    total_tracks = db.Column(db.Integer)
     release_date = db.Column(db.Date)
     icon_uri = db.Column(db.String(255))
     spotify_id = db.Column(db.String(255), unique=True)
@@ -107,12 +110,29 @@ def init_db():
                 'ALTER TABLE albums ADD COLUMN album_type VARCHAR(50)'
             ))
 
-def import_listen_history(data,user_id=1):
+def import_listen_history(data, user_id=1):
     with Session.begin() as session:
+        session.query(Stream).filter(Stream.user_id == user_id).delete(
+            synchronize_session=False
+        )
+        
         for history_file in data:
             for stream in history_file:
 
+                required_keys = (
+                    'spotify_track_uri', 'ts', 'ms_played', 'platform',
+                    'conn_country', 'skipped', 'reason_start', 'reason_end',
+                    'incognito_mode'
+                )
+                if any(
+                    key not in stream or stream[key] is None
+                    for key in required_keys
+                ):
+                    continue
+
                 spotify_id = str(stream['spotify_track_uri']).rsplit(':')[-1]
+                if not spotify_id:
+                    continue
 
                 # Check if track exists. If it doesn't, add the Spotify ID to the Tracks table.
                 track = session.query(Track).filter(
@@ -165,6 +185,7 @@ def get_or_create_album(session, album_data):
 
     album.name = album_data.get('name') or album.name
     album.album_type = album_data.get('album_type') or album.album_type
+    album.total_tracks = album_data.get('total_tracks') or album.total_tracks
     album.release_date = parse_release_date(album_data.get('release_date')) or album.release_date
 
     images = album_data.get('images') or []
@@ -197,9 +218,11 @@ def fetch_all_missing_data(fetch_track):
         tracks = session.query(Track.id, Track.spotify_id).filter(
             db.or_(
                 Track.name.is_(None),
+                Track.duration_ms.is_(None),
                 Track.album_id.is_(None),
                 Track.disc_number.is_(None),
                 Track.track_number.is_(None),
+                Track.explicit.is_(None)
             )
         ).all()
 
@@ -220,9 +243,11 @@ def fetch_all_missing_data(fetch_track):
             else:
                 print('Track successfully fetched!')
 
-            track_record.name = track_data.get('name') or track_record.name
+            track_record.name = track_data.get('name', track_record.name)
+            track_record.duration_ms = track_data.get('duration_ms', track_record.duration_ms)
             track_record.disc_number = track_data.get('disc_number', track_record.disc_number)
             track_record.track_number = track_data.get('track_number', track_record.track_number)
+            track_record.explicit = track_data.get('explicit', track_record.explicit)
 
             album_data = track_data.get('album')
             if album_data:

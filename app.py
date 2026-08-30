@@ -80,6 +80,7 @@ def callback():
 @app.route('/your-stats')
 def get_track():
     fetch_all_missing_data(fetch_track)
+    return '<p>done</p>'
 
 def fetch_track(id):
     track_url = f'https://api.spotify.com/v1/tracks/{id}'
@@ -87,7 +88,7 @@ def fetch_track(id):
         'Authorization': f'Bearer {os.getenv("token")}'
         }
     response = requests.get(track_url, headers=headers)
-    time.sleep(5)
+    time.sleep(0.5)
     return response.json()
 
 if __name__ == '__main__':
