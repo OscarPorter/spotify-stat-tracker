@@ -11,8 +11,9 @@ class User(Base):
 
     streams: Mapped[list['Stream']] = relationship()
 
-    username = db.Column(db.String(255), unique=True)
-    spotify_id = db.Column(db.String(255), unique=True)
+    spotify_id=db.Column(db.String(255), unique=True)
+    spotify_display_name=db.Column(db.String(255))
+    spotify_icon_url=db.Column(db.String(255))
 
 class Stream(Base):
     __tablename__ = 'streams'
@@ -234,7 +235,6 @@ def fetch_all_missing_data(fetch_track):
 
             if 'error' in track_data:
                 status = track_data['error']['status']
-                print('Track successfully fetched!')
                 if status in (401, 403):
                     raise Exception('Bad/expired token or bad OAuth request.')
                 elif status == 429:

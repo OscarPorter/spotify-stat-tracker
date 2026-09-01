@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Spotify Stat Tracker!</title>
+</head>
+
+<body>
+    <form action="/import_history" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="submit_action" value="upload_history">
+        <input type="file"
+            name="data_json_files"
+            accept=".json,application/json"
+            multiple
+            required>
+        <button type="submit">Send JSON files</button>
+    </form>
+
+    <form action="/import_history" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="submit_action" value="fetch_spotify_data">
+        <button type="submit">Fetch Spotify data</button>
+    </form>
+</body>
+</html>

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, request, jsonify
+from flask import Flask, render_template, redirect, request, jsonify, session
 
 import os
 from dotenv import load_dotenv
@@ -7,9 +7,11 @@ import json, urllib, uuid, requests, time
 
 from models import init_db, import_listen_history, fetch_all_missing_data
 
+
 load_dotenv()
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
 init_db()
 
@@ -18,12 +20,12 @@ MAX_FILE_SIZE = 200 * 1024**2 #200mb
 
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 
-@app.route('/',methods=['GET'])
-def page_name_get(): 
+
+@app.route('/')
+def index_get(): 
     return render_template('index.html')
 
-@app.route('/', methods=['POST'])
-def page_name_post():
+def write_json_to_db():
     uploaded_files = request.files.getlist('data_json_files')
 
     if not uploaded_files or len(uploaded_files) > MAX_FILES:
@@ -40,7 +42,7 @@ def page_name_post():
             return jsonify(error="Only JSON files are accepted"), 400
 
     import_listen_history(data)
-    return jsonify(data)
+
 
 @app.route('/login')
 def login():
@@ -54,6 +56,7 @@ def login():
     }
     auth_url = 'https://accounts.spotify.com/authorize/?' + urllib.parse.urlencode(authentication_request_params)
     return redirect(auth_url)
+
 
 def get_access_token(authorization_code:str):
     spotify_request_access_token_url = 'https://accounts.spotify.com/api/token/?'
@@ -69,27 +72,51 @@ def get_access_token(authorization_code:str):
         return response.json()
     raise Exception ('Failed to obtain Access token')
 
+
 @app.route('/callback')
 def callback():
   
     code = request.args.get('code')
     credentials = get_access_token(code)
-    os.environ['token'] = credentials['access_token']
-    return redirect('/your-stats')
+    session['token'] = credentials['access_token']
+    return redirect('/import_history')
 
-@app.route('/your-stats')
-def get_track():
-    fetch_all_missing_data(fetch_track)
-    return '<p>done</p>'
+
+@app.route('/import_history', methods=['GET'])
+def import_history_get():
+    return render_template('import_history.html')
+
+    
+@app.route('/import_history', methods=['POST'])
+def import_history_post():
+    action = request.form.get('submit_action')
+
+    if action == 'upload_history':
+        write_json_to_db()
+        return '<p>Files imported</p>'
+
+    elif action == 'fetch_spotify_data':
+        try:
+            fetch_all_missing_data(fetch_track)
+        except Exception as error:
+            return f'<p>{error}</p>'
+        return '<p>All done!</p>'
+
 
 def fetch_track(id):
     track_url = f'https://api.spotify.com/v1/tracks/{id}'
-    headers = {
-        'Authorization': f'Bearer {os.getenv("token")}'
-        }
+    headers = {'Authorization': f'Bearer {session.get('token')}'}
     response = requests.get(track_url, headers=headers)
     time.sleep(0.5)
     return response.json()
 
+
+def fetch_profile():
+    url = 'https://api.spotify.com/v1/me'
+    headers = {'Authorization': f'Bearer {session.get('token')}'}
+    response = requests.get(url, headers=headers)
+    return response.json()
+
+    
 if __name__ == '__main__':
    app.run(debug=True)

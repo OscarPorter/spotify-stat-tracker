@@ -7,14 +7,6 @@
 
 <body>
     <h2>Spotify Stat Tracker!</h2>
-    <form action="/" method="post" enctype="multipart/form-data">
-        <input type="file"
-            name="data_json_files"
-            accept=".json,application/json"
-            multiple
-            required>
-        <button type="submit">Send JSON files</button>
-    </form>
     <form action="{{ url_for('login') }}">
         <button>Login</button>
     </form>
