@@ -1,5 +1,5 @@
 import sqlalchemy as db
-from sqlalchemy.orm import Mapped, mapped_column, declarative_base, relationship, sessionmaker
+from sqlalchemy.orm import Mapped, mapped_column, declarative_base, relationship, sessionmaker, contains_eager
 from datetime import datetime, date
 
 Base = declarative_base()
@@ -274,3 +274,32 @@ def fetch_all_missing_data(fetch_track):
                     track_session.flush()
 
             track_session.flush()
+
+def get_completed_albums(user_id=1):
+    with Session() as session:
+        listened_tracks = (
+            session.query(
+                Track.album_id.label('album_id'),
+                db.func.count(db.func.distinct(Track.id)).label('listened_tracks')
+            )
+            .join(Stream, Stream.track_id == Track.id)
+            .filter(
+                Stream.user_id == user_id,
+                Stream.ms_played >= 30_000
+            )
+            .group_by(Track.album_id)
+            .subquery()
+        )
+
+        return (
+            session.query(Album)
+            .join(listened_tracks, listened_tracks.c.album_id == Album.id)
+            .join(Album.artists)
+            .options(contains_eager(Album.artists))
+            .filter(
+                Album.total_tracks.is_not(None),
+                listened_tracks.c.listened_tracks == Album.total_tracks,
+                Album.album_type.is_('album'))
+            .order_by(Album.release_date)
+            .all()
+        )

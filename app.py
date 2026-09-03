@@ -1,12 +1,12 @@
 from flask import Flask, render_template, redirect, request, jsonify, session
+from markupsafe import Markup
 
 import os
 from dotenv import load_dotenv
 
 import json, urllib, uuid, requests, time
 
-from models import init_db, import_listen_history, fetch_all_missing_data
-
+from models import init_db, import_listen_history, fetch_all_missing_data, get_completed_albums
 
 load_dotenv()
 
@@ -101,6 +101,22 @@ def import_history_post():
         except Exception as error:
             return f'<p>{error}</p>'
         return '<p>All done!</p>'
+
+
+@app.route('/stats')
+def stats():
+    completed_albums = get_completed_albums()
+    content = ''
+    for album in completed_albums:
+        artists = ', '.join([artist.name for artist in album.artists])
+        content += f"""
+        <div>
+            <img src="{album.icon_uri}" width="250" height="250">
+            <p style="width: 250px; overflow-wrap: break-word;">{album.name} • {artists}</p>
+        </div>
+        """
+
+    return render_template('stats.html', data=Markup(content))
 
 
 def fetch_track(id):
