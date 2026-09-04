@@ -1,5 +1,4 @@
 <html>
-<head>
 <style>
 .container {
     display: grid;
@@ -12,12 +11,15 @@
 }
 
 </style>
-</head>
 <body>
 
-<div class="container">
-  {{data}}
-</div>
+    <form action="{{ url_for('settings_get') }}">
+        <button>Settings</button>
+    </form>
+
+    <div class="container">
+        {{data}}
+    </div>
 
 </body>
 </html>

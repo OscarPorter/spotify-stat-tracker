@@ -21,10 +21,6 @@ MAX_FILE_SIZE = 200 * 1024**2 #200mb
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 
 
-@app.route('/')
-def index_get(): 
-    return render_template('index.html')
-
 def write_json_to_db():
     uploaded_files = request.files.getlist('data_json_files')
 
@@ -42,6 +38,11 @@ def write_json_to_db():
             return jsonify(error="Only JSON files are accepted"), 400
 
     import_listen_history(data)
+
+
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 
 @app.route('/login')
@@ -73,22 +74,27 @@ def get_access_token(authorization_code:str):
     raise Exception ('Failed to obtain Access token')
 
 
+def get_user():
+    #TODO: Make this return the user_id tied to the spotify_id given by https://api.spotify.com/v1/me
+    return 1
+
+
 @app.route('/callback')
 def callback():
   
     code = request.args.get('code')
     credentials = get_access_token(code)
     session['token'] = credentials['access_token']
-    return redirect('/import_history')
+    return redirect('/1')
 
 
-@app.route('/import_history', methods=['GET'])
-def import_history_get():
-    return render_template('import_history.html')
+@app.route('/settings', methods=['GET'])
+def settings_get():
+    return render_template('settings.html')
 
     
-@app.route('/import_history', methods=['POST'])
-def import_history_post():
+@app.route('/settings', methods=['POST'])
+def settings_post():
     action = request.form.get('submit_action')
 
     if action == 'upload_history':
@@ -103,9 +109,9 @@ def import_history_post():
         return '<p>All done!</p>'
 
 
-@app.route('/stats')
-def stats():
-    completed_albums = get_completed_albums()
+@app.route('/<user>')
+def stats(user):
+    completed_albums = get_completed_albums(user)
     content = ''
     for album in completed_albums:
         artists = ', '.join([artist.name for artist in album.artists])
