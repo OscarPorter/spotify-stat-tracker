@@ -1,13 +1,37 @@
 <html>
 <style>
-.container {
+.grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, 215px);
     width: 100%;
 }
 
-.body {
-    background-color: rgb(12, 12, 12);
+body {
+    background-color: rgb(17, 17, 18);
+}
+
+* {
+    color: rgb(255, 255, 255);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.container {
+    width: min(100% - 2rem, 90rem);
+    margin-inline: auto;
+}
+
+.album-name {
+    width: 200px; 
+    overflow-wrap: break-word; 
+    margin-bottom: 0px;
+}
+
+.album-artists {
+    width: 200px; 
+    overflow-wrap: break-word; 
+    margin-top: 0px; 
+    color: rgb(149,149,149); 
+    padding-bottom: 0px;
 }
 
 </style>

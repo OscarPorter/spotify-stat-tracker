@@ -1,5 +1,5 @@
 from flask import Flask, render_template, redirect, request, jsonify, session
-from markupsafe import Markup
+from markupsafe import Markup, escape
 
 import os
 from dotenv import load_dotenv
@@ -112,15 +112,46 @@ def settings_post():
 @app.route('/<user>')
 def stats(user):
     completed_albums = get_completed_albums(user)
+
+    if not completed_albums:
+        return render_template('stats.html', data=Markup('<p>No content to show</p>'))
+    
     content = ''
+    decade = None
     for album in completed_albums:
         artists = ', '.join([artist.name for artist in album.artists])
+        album_decade = (album.release_date.year // 10) * 10
+
+        if decade is None:
+            decade = album_decade
+            content += f"""
+                <section>
+                    <h2>{decade}s</h2>
+                    <div class="grid">
+                """
+            
+        elif decade != album_decade:
+            decade = album_decade
+            content += f"""
+                    </div>
+                </section>
+                <section>
+                    <h2>{decade}s</h2>
+                    <div class="grid">
+                """
+            
         content += f"""
-        <div>
-            <img src="{album.icon_uri}" width="250" height="250">
-            <p style="width: 250px; overflow-wrap: break-word;">{album.name} • {artists}</p>
-        </div>
+                        <article class="album">
+                            <img src="{escape(album.icon_uri)}" alt="Album cover for {escape(album.name)}" width="200" height="200">
+                            <h3 class="album-name">{escape(album.name)}</h3>
+                            <h4 class="album-artists">{escape(artists)}</h4>
+                        </article>
         """
+
+    content += """
+                    </div>
+                </section>
+    """
 
     return render_template('stats.html', data=Markup(content))
 
