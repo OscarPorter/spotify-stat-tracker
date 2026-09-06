@@ -126,8 +126,8 @@ def stats(user):
             decade = album_decade
             content += f"""
                 <section>
-                    <h2>{decade}s</h2>
-                    <div class="grid">
+                    <button type="button" class="collapsible"><h2>{decade}s</h2></button>
+                    <div class="grid open">
                 """
             
         elif decade != album_decade:
@@ -135,9 +135,10 @@ def stats(user):
             content += f"""
                     </div>
                 </section>
+                <hr>
                 <section>
-                    <h2>{decade}s</h2>
-                    <div class="grid">
+                    <button type="button" class="collapsible"><h2>{decade}s</h2></button>
+                    <div class="grid open">
                 """
             
         content += f"""

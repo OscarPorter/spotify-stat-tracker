@@ -4,6 +4,9 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, 215px);
     width: 100%;
+    max-height: 100px;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
 }
 
 body {
@@ -34,16 +37,56 @@ body {
     padding-bottom: 0px;
 }
 
+.collapsible {
+    border: none;
+    background: none;
+    cursor: pointer;
+    border: none;
+    text-align: left;
+    outline: none;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.collapsible:after {
+  content: '+';
+  font-size: 20px;
+  color: white;
+  margin-left: 10px;
+}
+
+.active:after {
+  content: "-";
+}
+
 </style>
+
 <body>
-
-    <form action="{{ url_for('settings_get') }}">
-        <button>Settings</button>
-    </form>
-
     <div class="container">
+        <form action="{{ url_for('settings_get') }}">
+            <button>Settings</button>
+        </form>
         {{data}}
     </div>
+
+<script>
+var coll = document.getElementsByClassName("collapsible");
+var i;
+
+for (i = 0; i < coll.length; i++) {
+    coll[i].addEventListener("click", function() {
+        this.classList.toggle("active");
+        var content = this.nextElementSibling;
+        console.log(content);
+        if (content.style.maxHeight){
+            content.style.maxHeight = null;
+        } else {
+            content.style.maxHeight = content.scrollHeight + "px";
+        }
+    });
+}
+</script>
 
 </body>
 </html>
