@@ -1,6 +1,7 @@
 import sqlalchemy as db
 from sqlalchemy.orm import Mapped, mapped_column, declarative_base, relationship, sessionmaker, contains_eager
 from datetime import datetime, date
+from itertools import groupby
 
 Base = declarative_base()
 
@@ -275,31 +276,56 @@ def fetch_all_missing_data(fetch_track):
 
             track_session.flush()
 
-def get_completed_albums(user_id=1):
+def get_completed_albums(user_id=1, sort_by='release_date'):
     with Session() as session:
-        listened_tracks = (
-            session.query(
-                Track.album_id.label('album_id'),
-                db.func.count(db.func.distinct(Track.id)).label('listened_tracks')
-            )
-            .join(Stream, Stream.track_id == Track.id)
-            .filter(
-                Stream.user_id == user_id,
-                Stream.ms_played >= 30_000
-            )
-            .group_by(Track.album_id)
-            .subquery()
+        first_listens = (
+        session.query(
+            Track.album_id.label('album_id'),
+            Track.id.label('track_id'),
+            db.func.min(Stream.timestamp).label('first_listened_at')
+        )
+        .join(Stream, Stream.track_id == Track.id)
+        .filter(
+            Stream.user_id == user_id,
+            db.or_(
+                    Stream.ms_played >= 30_000,
+                    Stream.ms_played >= (Track.duration_ms//2)
+                )
+        )
+        .group_by(Track.album_id, Track.id)
+        .subquery()
         )
 
+        completion_dates = (
+        session.query(
+            first_listens.c.album_id,
+            db.func.max(first_listens.c.first_listened_at).label('completed_at'),
+            db.func.count(first_listens.c.track_id).label('listened_tracks')
+        )
+        .group_by(first_listens.c.album_id)
+        .subquery()
+        )
+
+        sort_columns = {
+            'release_date': Album.release_date,
+            'completion_date': completion_dates.c.completed_at,
+        }
+
+        order_column = sort_columns.get(sort_by, Album.release_date)
+
         return (
-            session.query(Album)
-            .join(listened_tracks, listened_tracks.c.album_id == Album.id)
-            .join(Album.artists)
-            .options(contains_eager(Album.artists))
-            .filter(
-                Album.total_tracks.is_not(None),
-                listened_tracks.c.listened_tracks == Album.total_tracks,
-                Album.album_type.is_('album'))
-            .order_by(Album.release_date)
-            .all()
+        session.query(
+            Album,
+            completion_dates.c.completed_at
+        )
+        .join(completion_dates, completion_dates.c.album_id == Album.id)
+        .join(Album.artists)
+        .options(contains_eager(Album.artists))
+        .filter(
+            Album.total_tracks.is_not(None),
+            completion_dates.c.listened_tracks == Album.total_tracks,
+            Album.album_type.is_('album')
+        )
+        .order_by(order_column)
+        .all()
         )

@@ -67,7 +67,29 @@ body {
         <form action="{{ url_for('settings_get') }}">
             <button>Settings</button>
         </form>
+
+        <form action="{{ request.path }}" method="get">
+            <label for="sort-order">Sort by:</label>
+            <select
+                name="sort-order"
+                id="sort-order"
+                onchange="this.form.submit()"
+            >
+            
+            <option value="date-released"
+                {% if request.args.get('sort-order') == 'date-released' %}selected{% endif %}>
+                Release Date
+            </option>
+
+            <option value="date-completed"
+                {% if request.args.get('sort-order') == 'date-completed' %}selected{% endif %}>
+                Completion Date
+            </option>
+            </select>
+        </form>
+
         {{data}}
+
     </div>
 
 <script>

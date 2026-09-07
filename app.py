@@ -111,36 +111,55 @@ def settings_post():
 
 @app.route('/<user>')
 def stats(user):
-    completed_albums = get_completed_albums(user)
+    sort_order = request.args.get('sort-order')
+    if sort_order == 'date-released':
+        return render_template('stats.html', data=Markup(content_date_released(user)))
+    elif sort_order == 'date-completed':
+        return render_template('stats.html', data=Markup(content_date_completed(user)))
+    else:
+        return render_template('stats.html', data=Markup(content_date_released(user)))
 
+def content_date_released(user):
+    completed_albums = get_completed_albums(user, sort_by='release_date')
+    return _render_album_sections(completed_albums, lambda album, _: f'{album.release_date.year // 10 * 10}s')
+
+def content_date_completed(user):
+    completed_albums = get_completed_albums(user, sort_by='completion_date')
+
+    return _render_album_sections(
+        completed_albums,
+        lambda _, completion_date: completion_date.strftime('%B, %Y')
+    )
+
+def _render_album_sections(completed_albums, section_label):
     if not completed_albums:
         return render_template('stats.html', data=Markup('<p>No content to show</p>'))
-    
-    content = ''
-    decade = None
-    for album in completed_albums:
-        artists = ', '.join([artist.name for artist in album.artists])
-        album_decade = (album.release_date.year // 10) * 10
 
-        if decade is None:
-            decade = album_decade
+    content = ''
+    current_label = None
+    for album, completion_date in completed_albums:
+        artists = ', '.join([artist.name for artist in album.artists])
+        label = section_label(album, completion_date)
+
+        if current_label is None:
+            current_label = label
             content += f"""
                 <section>
-                    <button type="button" class="collapsible"><h2>{decade}s</h2></button>
+                    <button type="button" class="collapsible"><h2>{label}</h2></button>
                     <div class="grid open">
                 """
-            
-        elif decade != album_decade:
-            decade = album_decade
+
+        elif current_label != label:
+            current_label = label
             content += f"""
                     </div>
                 </section>
                 <hr>
                 <section>
-                    <button type="button" class="collapsible"><h2>{decade}s</h2></button>
+                    <button type="button" class="collapsible"><h2>{label}</h2></button>
                     <div class="grid open">
                 """
-            
+
         content += f"""
                         <article class="album">
                             <img src="{escape(album.icon_uri)}" alt="Album cover for {escape(album.name)}" width="200" height="200">
@@ -153,9 +172,7 @@ def stats(user):
                     </div>
                 </section>
     """
-
-    return render_template('stats.html', data=Markup(content))
-
+    return content
 
 def fetch_track(id):
     track_url = f'https://api.spotify.com/v1/tracks/{id}'
