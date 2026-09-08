@@ -86,6 +86,35 @@ body {
                 Completion Date
             </option>
             </select>
+
+            <label for="group-by">Group by:</label>
+            <select
+                name="group-by"
+                id="group-by"
+                onchange="this.form.submit()"
+            >
+            
+            <option value="decade"
+                {% if request.args.get('group-by') == 'decade' %}selected{% endif %}>
+                Decade
+            </option>
+
+            <option value="year"
+                {% if request.args.get('group-by') == 'year' %}selected{% endif %}>
+                Year
+            </option>
+
+            <option value="month"
+                {% if request.args.get('group-by') == 'month' %}selected{% endif %}>
+                Month
+            </option>
+
+            <option value="day"
+                {% if request.args.get('group-by') == 'day' %}selected{% endif %}>
+                Day
+            </option>
+
+            </select>
         </form>
 
         {{data}}

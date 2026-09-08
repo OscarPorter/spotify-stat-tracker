@@ -111,35 +111,52 @@ def settings_post():
 
 @app.route('/<user>')
 def stats(user):
-    sort_order = request.args.get('sort-order')
-    if sort_order == 'date-released':
-        return render_template('stats.html', data=Markup(content_date_released(user)))
-    elif sort_order == 'date-completed':
-        return render_template('stats.html', data=Markup(content_date_completed(user)))
+    sort_order = request.args.get('sort-order', 'date-released')
+    group_by = request.args.get('group-by', 'decade')
+
+    if sort_order == 'date-completed':
+        completed_albums = get_completed_albums(user, sort_by='completion_date')
+        sort_key = 'completion_date'
     else:
-        return render_template('stats.html', data=Markup(content_date_released(user)))
+        completed_albums = get_completed_albums(user, sort_by='release_date')
+        sort_key = 'release_date'
 
-def content_date_released(user):
-    completed_albums = get_completed_albums(user, sort_by='release_date')
-    return _render_album_sections(completed_albums, lambda album, _: f'{album.release_date.year // 10 * 10}s')
-
-def content_date_completed(user):
-    completed_albums = get_completed_albums(user, sort_by='completion_date')
-
-    return _render_album_sections(
-        completed_albums,
-        lambda _, completion_date: completion_date.strftime('%B, %Y')
+    return render_template(
+        'stats.html',
+        data=Markup(_render_album_sections(completed_albums, group_by=group_by, sort_key=sort_key))
     )
 
-def _render_album_sections(completed_albums, section_label):
+
+def _group_label(item_date, group_by='decade'):
+    if item_date is None:
+        return 'Unknown'
+
+    if group_by == 'decade':
+        return f'{(item_date.year // 10) * 10}s'
+
+    elif group_by == 'year':
+        return str(item_date.year)
+
+    elif group_by == 'month':
+        return item_date.strftime('%B %Y')
+
+    elif group_by == 'day':
+        return item_date.strftime('%A, %B %d, %Y')
+
+    else:
+        return f'{(item_date.year // 10) * 10}s'
+
+
+def _render_album_sections(completed_albums, group_by='decade', sort_key='release_date'):
     if not completed_albums:
-        return render_template('stats.html', data=Markup('<p>No content to show</p>'))
+        return '<p>No content to show</p>'
 
     content = ''
     current_label = None
     for album, completion_date in completed_albums:
         artists = ', '.join([artist.name for artist in album.artists])
-        label = section_label(album, completion_date)
+        group_date = album.release_date if sort_key == 'release_date' else completion_date
+        label = _group_label(group_date, group_by)
 
         if current_label is None:
             current_label = label

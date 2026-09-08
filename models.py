@@ -289,7 +289,7 @@ def get_completed_albums(user_id=1, sort_by='release_date'):
             Stream.user_id == user_id,
             db.or_(
                     Stream.ms_played >= 30_000,
-                    Stream.ms_played >= (Track.duration_ms//2)
+                    Stream.ms_played >= Track.duration_ms // 2
                 )
         )
         .group_by(Track.album_id, Track.id)
@@ -323,8 +323,11 @@ def get_completed_albums(user_id=1, sort_by='release_date'):
         .options(contains_eager(Album.artists))
         .filter(
             Album.total_tracks.is_not(None),
-            completion_dates.c.listened_tracks == Album.total_tracks,
-            Album.album_type.is_('album')
+            db.or_(
+            completion_dates.c.listened_tracks >= Album.total_tracks,
+            completion_dates.c.listened_tracks >= 5,
+            ),
+            Album.album_type.is_not('single')
         )
         .order_by(order_column)
         .all()
