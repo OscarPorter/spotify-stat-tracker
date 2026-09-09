@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 import json, urllib, uuid, requests, time
 
-from models import init_db, import_listen_history, fetch_all_missing_data, get_completed_albums
+from models import init_db, import_listen_history, fetch_all_missing_data, get_completed_albums, get_overview
 
 load_dotenv()
 
@@ -123,7 +123,8 @@ def stats(user):
 
     return render_template(
         'stats.html',
-        data=Markup(_render_album_sections(completed_albums, group_by=group_by, sort_key=sort_key))
+        overview_section=Markup(_render_overview()),
+        album_sections=Markup(_render_album_sections(completed_albums, group_by=group_by, sort_key=sort_key))
     )
 
 
@@ -163,7 +164,7 @@ def _render_album_sections(completed_albums, group_by='decade', sort_key='releas
             content += f"""
                 <section>
                     <button type="button" class="collapsible"><h2>{label}</h2></button>
-                    <div class="grid open">
+                    <div class="albums-grid open">
                 """
 
         elif current_label != label:
@@ -174,7 +175,7 @@ def _render_album_sections(completed_albums, group_by='decade', sort_key='releas
                 <hr>
                 <section>
                     <button type="button" class="collapsible"><h2>{label}</h2></button>
-                    <div class="grid open">
+                    <div class="albums-grid open">
                 """
 
         content += f"""
@@ -190,6 +191,23 @@ def _render_album_sections(completed_albums, group_by='decade', sort_key='releas
                 </section>
     """
     return content
+
+
+def _render_overview():
+    d = get_overview()
+    return f'''
+        <div class='overview-grid'>
+        <div><h2>{format(d['streams'], ',')}</h2><h3>streams</h3></div>
+        <div><h2>{format(d['ms_played']//3600_000, ',')}</h2><h3>hours streamed</h3></div>
+        </div>
+
+        <div class='overview-grid'>
+        <div><h2>{format(d['tracks'], ',')}</h2><h3>tracks</h3></div>
+        <div><h2>{format(d['albums'], ',')}</h2><h3>albums</h3></div>
+        <div><h2>{format(d['artists'], ',')}</h2><h3>artists</h3></div>
+        </div>
+    '''
+
 
 def fetch_track(id):
     track_url = f'https://api.spotify.com/v1/tracks/{id}'

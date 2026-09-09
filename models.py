@@ -276,9 +276,9 @@ def fetch_all_missing_data(fetch_track):
 
             track_session.flush()
 
-def get_completed_albums(user_id=1, sort_by='release_date'):
-    with Session() as session:
-        first_listens = (
+
+def get_first_listens(session, user_id):
+    first_listens = (
         session.query(
             Track.album_id.label('album_id'),
             Track.id.label('track_id'),
@@ -295,6 +295,12 @@ def get_completed_albums(user_id=1, sort_by='release_date'):
         .group_by(Track.album_id, Track.id)
         .subquery()
         )
+    return first_listens
+
+
+def get_completed_albums(user_id=1, sort_by='release_date'):
+    with Session() as session:
+        first_listens = get_first_listens(session, user_id)
 
         completion_dates = (
         session.query(
@@ -332,3 +338,63 @@ def get_completed_albums(user_id=1, sort_by='release_date'):
         .order_by(order_column)
         .all()
         )
+
+
+def get_total_ms_played(user_id):
+    with Session() as session:
+        total_ms = (
+            session.query(db.func.sum(Stream.ms_played))
+            .filter(Stream.user_id == user_id)
+            .scalar()
+        )
+        return total_ms or 0
+
+
+def get_total_streams(user_id):
+    with Session() as session:
+        total_ms = (
+            session.query(db.func.count(Stream.id))
+            .filter(Stream.user_id == user_id)
+            .scalar()
+        )
+        return total_ms or 0
+
+
+def get_total_albums(user_id):
+    return len(get_completed_albums(user_id))
+
+def get_total_artists(user_id):
+    completed = get_completed_albums(user_id)
+    artist_names = set()
+
+    for album, _ in completed:
+        for artist in album.artists:
+            if artist.name:
+                artist_names.add(artist.name)
+
+    return len(artist_names)
+
+
+def get_total_tracks(user_id):
+    with Session() as session:
+        first_listens = get_first_listens(session, user_id)
+        total = (
+            session.query(db.func.count(first_listens.c.track_id))
+            .select_from(first_listens)
+            .scalar()
+        )
+        return total or 0
+    
+
+def get_overview(user_id=1):
+    return {
+        'ms_played': get_total_ms_played(user_id),
+        'streams': get_total_streams(user_id),
+        'albums': get_total_albums(user_id),
+        'tracks': get_total_tracks(user_id),
+        'artists': get_total_artists(user_id)
+    }
+
+
+if __name__ == '__main__':
+    print(get_overview())

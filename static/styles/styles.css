@@ -1,0 +1,99 @@
+* {
+    background-color: rgb(17, 17, 18);
+    color: rgb(255, 255, 255);
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+}
+
+.title-text {
+    font-size: 100px;
+    margin: 30px 0px;
+}
+
+.sort-selector {
+    background-color: rgb(24, 24, 28);
+    border: none;
+    color: rgb(156, 156, 156);
+    font-size: 15px;
+    padding: 10px 100px 10px 10px;
+    margin: 0px 5px;
+}
+
+.albums-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, 215px);
+    width: 100%;
+    max-height: 100px;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+}
+
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, 120px);
+    width: 100%;
+    margin-bottom: 0px;
+}
+
+.overview-grid h2 {
+    margin-bottom: 0px;
+}
+
+.overview-grid h3 {
+    color: rgb(156, 156, 156);
+    margin-top: 5px;
+    white-space: nowrap;
+}
+
+.overview-container {
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+}
+
+.sort-form {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+}
+
+.container {
+    width: min(100% - 2rem, 90rem);
+    margin-inline: auto;
+}
+
+.album-name {
+    width: 200px; 
+    overflow-wrap: break-word; 
+    margin-bottom: 0px;
+}
+
+.album-artists {
+    width: 200px; 
+    overflow-wrap: break-word; 
+    margin-top: 0px; 
+    color: rgb(149,149,149); 
+    padding-bottom: 0px;
+}
+
+.collapsible {
+    border: none;
+    background: none;
+    cursor: pointer;
+    border: none;
+    text-align: left;
+    outline: none;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.collapsible:after {
+  content: '+';
+  font-size: 20px;
+  color: white;
+  margin-left: 10px;
+}
+
+.active:after {
+  content: "-";
+}

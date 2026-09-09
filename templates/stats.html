@@ -1,123 +1,69 @@
 <html>
-<style>
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, 215px);
-    width: 100%;
-    max-height: 100px;
-    overflow: hidden;
-    transition: max-height 0.4s ease;
-}
+<title>Your Albums</title>
 
-body {
-    background-color: rgb(17, 17, 18);
-}
-
-* {
-    color: rgb(255, 255, 255);
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-.container {
-    width: min(100% - 2rem, 90rem);
-    margin-inline: auto;
-}
-
-.album-name {
-    width: 200px; 
-    overflow-wrap: break-word; 
-    margin-bottom: 0px;
-}
-
-.album-artists {
-    width: 200px; 
-    overflow-wrap: break-word; 
-    margin-top: 0px; 
-    color: rgb(149,149,149); 
-    padding-bottom: 0px;
-}
-
-.collapsible {
-    border: none;
-    background: none;
-    cursor: pointer;
-    border: none;
-    text-align: left;
-    outline: none;
-    width: 100%;
-    display: flex;
-    align-items: center;
-}
-
-.collapsible:after {
-  content: '+';
-  font-size: 20px;
-  color: white;
-  margin-left: 10px;
-}
-
-.active:after {
-  content: "-";
-}
-
-</style>
+<link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/styles.css') }}">
 
 <body>
     <div class="container">
+        
         <form action="{{ url_for('settings_get') }}">
             <button>Settings</button>
         </form>
 
-        <form action="{{ request.path }}" method="get">
-            <label for="sort-order">Sort by:</label>
-            <select
-                name="sort-order"
-                id="sort-order"
-                onchange="this.form.submit()"
-            >
-            
-            <option value="date-released"
-                {% if request.args.get('sort-order') == 'date-released' %}selected{% endif %}>
-                Release Date
-            </option>
+        <h1 class="title-text">Your Albums</h1>
+        <header class="overview-container">
+            <div>{{overview_section}}</div>
+            <form class="sort-form" action="{{ request.path }}" method="get">
+                <select
+                    class="sort-selector"
+                    name="sort-order"
+                    id="sort-order"
+                    onchange="this.form.submit()"
+                >
+                
+                <option value="date-released"
+                    {% if request.args.get('sort-order') == 'date-released' %}selected{% endif %}>
+                    Release Date
+                </option>
 
-            <option value="date-completed"
-                {% if request.args.get('sort-order') == 'date-completed' %}selected{% endif %}>
-                Completion Date
-            </option>
-            </select>
+                <option value="date-completed"
+                    {% if request.args.get('sort-order') == 'date-completed' %}selected{% endif %}>
+                    Completion Date
+                </option>
+                </select>
 
-            <label for="group-by">Group by:</label>
-            <select
-                name="group-by"
-                id="group-by"
-                onchange="this.form.submit()"
-            >
-            
-            <option value="decade"
-                {% if request.args.get('group-by') == 'decade' %}selected{% endif %}>
-                Decade
-            </option>
+                <select
+                    class="sort-selector"
+                    name="group-by"
+                    id="group-by"
+                    onchange="this.form.submit()"
+                >
+                
+                <option value="decade"
+                    {% if request.args.get('group-by') == 'decade' %}selected{% endif %}>
+                    Decade
+                </option>
 
-            <option value="year"
-                {% if request.args.get('group-by') == 'year' %}selected{% endif %}>
-                Year
-            </option>
+                <option value="year"
+                    {% if request.args.get('group-by') == 'year' %}selected{% endif %}>
+                    Year
+                </option>
 
-            <option value="month"
-                {% if request.args.get('group-by') == 'month' %}selected{% endif %}>
-                Month
-            </option>
+                <option value="month"
+                    {% if request.args.get('group-by') == 'month' %}selected{% endif %}>
+                    Month
+                </option>
 
-            <option value="day"
-                {% if request.args.get('group-by') == 'day' %}selected{% endif %}>
-                Day
-            </option>
+                <option value="day"
+                    {% if request.args.get('group-by') == 'day' %}selected{% endif %}>
+                    Day
+                </option>
 
-            </select>
-        </form>
+                </select>
+            </form>
+        </header>
 
-        {{data}}
+        <div>{{album_sections}}</div>
 
     </div>
 
