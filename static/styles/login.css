@@ -1,0 +1,51 @@
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: rgb(18, 18, 18);
+}
+
+.login-panel {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-top: -100px;
+}
+
+* {
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+}
+
+h1 {
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.spotify-auth-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 60px;
+    border: 1px solid #1db954;
+    border-radius: 15px;
+    background-color: #1db954;
+    color: black;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.spotify-auth-button svg {
+    width: 24px;
+    height: 24px;
+    display: block;
+    fill: currentColor;
+}
+
+.spotify-auth-button svg path {
+    fill: currentColor;
+}

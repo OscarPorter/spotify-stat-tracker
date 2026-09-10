@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{% block title %}Spotify Stat Tracker{% endblock %}</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/navbar.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-inner">
+            <form action="{{ url_for('index') }}" class="home-form">
+                <button class="site-name"><h2>Spotify Album Tracker</h2></button>
+            </form>
+
+            <form>
+                <button class="login-button">Login</button>
+            </form>
+
+            <form action="{{ url_for('settings_get') }}" method="get">
+                <button class="settings-button" type="submit">Settings</button>
+            </form>
+        </div>
+    </nav>
+
+    {% block content %}{% endblock %}
+</body>
+</html>

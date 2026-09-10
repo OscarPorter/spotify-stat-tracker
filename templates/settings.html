@@ -1,12 +1,9 @@
-<!DOCTYPE html>
-<html>
+{% extends "navbar.html" %}
 
-<head>
-    <title>Spotify Stat Tracker!</title>
-</head>
+{% block title %}Settings{% endblock %}
 
-<body>
-    
+{% block content %}
+<div class="container">
     <form action="/settings" method="post" enctype="multipart/form-data">
         <input type="hidden" name="submit_action" value="upload_history">
         <input type="file"
@@ -21,5 +18,5 @@
         <input type="hidden" name="submit_action" value="fetch_spotify_data">
         <button type="submit">Fetch Spotify data</button>
     </form>
-</body>
-</html>
+</div>
+{% endblock %}

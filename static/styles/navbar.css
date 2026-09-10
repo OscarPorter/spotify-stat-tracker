@@ -1,0 +1,56 @@
+.container {
+    width: min(100% - 2rem, 90rem);
+    margin-inline: auto;
+}
+
+body {
+    margin: 0;
+}
+
+.navbar {
+    background-color: #18181C;
+    width: 100%;
+}
+
+.nav-inner {
+    width: min(100% - 2rem, 90rem);
+    background-color: #18181C;
+    margin-inline: auto;
+
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.site-name, .home-form {
+    color: white;
+    margin-right: auto;
+    background: none;
+    border: none;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.settings-button {
+    background-color: rgb(24, 24, 28);
+    border: none;
+    color: rgb(156, 156, 156);
+    padding: 10px 20px;
+    margin: 0px 5px;
+    text-decoration: none;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.login-button {
+    background-color: rgb(24, 24, 28);
+    border: none;
+    color: black;
+    background-color: #1db954;
+    padding: 10px 20px;
+    margin: 0px 5px;
+    border-radius: 12px;
+    text-decoration: none;
+    cursor: pointer;
+}
+

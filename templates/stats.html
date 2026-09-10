@@ -1,15 +1,14 @@
-<html>
-<title>Your Albums</title>
+{% extends "navbar.html" %}
+{% block content %}
 
-<link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/styles.css') }}">
+<html lang="en">
+<head>
+    <title>Your Albums</title>
+    <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/stats.css') }}">
+</head>
 
 <body>
     <div class="container">
-        
-        <form action="{{ url_for('settings_get') }}">
-            <button>Settings</button>
-        </form>
-
         <h1 class="title-text">Your Albums</h1>
         <header class="overview-container">
             <div>{{overview_section}}</div>
@@ -87,3 +86,4 @@ for (i = 0; i < coll.length; i++) {
 
 </body>
 </html>
+{% endblock %}
