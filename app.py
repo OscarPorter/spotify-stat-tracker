@@ -44,9 +44,13 @@ def write_json_to_db():
 def index():
     return render_template('index.html')
 
-
 @app.route('/login')
 def login():
+    return render_template('login.html')
+
+
+@app.route('/login/spotify')
+def login_spotify_request():
     authentication_request_params = {
     'response_type': 'code',
     'client_id': os.getenv('CLIENT_ID'),
@@ -83,7 +87,10 @@ def get_user():
 def callback():
   
     code = request.args.get('code')
-    credentials = get_access_token(code)
+    try:
+        credentials = get_access_token(code)
+    except:
+        return redirect('/login')
     session['token'] = credentials['access_token']
     return redirect('/1')
 
