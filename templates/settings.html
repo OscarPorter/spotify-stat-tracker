@@ -2,6 +2,10 @@
 
 {% block title %}Settings{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/settings.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <form action="/settings" method="post" enctype="multipart/form-data">

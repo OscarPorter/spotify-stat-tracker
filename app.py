@@ -134,6 +134,11 @@ def stats(user):
         album_sections=Markup(_render_album_sections(completed_albums, group_by=group_by, sort_key=sort_key))
     )
 
+@app.route('/exceptions', methods=['POST'])
+def add_exception():
+    album_id = request.form.get('album_id')
+    print(album_id)
+    return redirect(request.referrer or '/')
 
 def _group_label(item_date, group_by='decade'):
     if item_date is None:
@@ -187,7 +192,16 @@ def _render_album_sections(completed_albums, group_by='decade', sort_key='releas
 
         content += f"""
                         <article class="album">
-                            <img src="{escape(album.icon_uri)}" alt="Album cover for {escape(album.name)}" width="200" height="200">
+                            <div class="album-image">
+                                <img src="{escape(album.icon_uri)}" alt="Album cover for {escape(album.name)}" width="200" height="200">
+
+                                <form method="post" action="/exceptions">
+                                    <input type="hidden" name="album_id" value="{escape(album.id)}">
+                                    <button type="submit" class="album-button" title="Add album to exceptions">
+                                        ⚙︎
+                                    </button>
+                                </form>
+                            </div>
                             <h3 class="album-name">{escape(album.name)}</h3>
                             <h4 class="album-artists">{escape(artists)}</h4>
                         </article>
