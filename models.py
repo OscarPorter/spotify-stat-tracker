@@ -9,8 +9,8 @@ class User(Base):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
-
-    streams: Mapped[list['Stream']] = relationship()
+    streams = relationship('Stream', back_populates='user')
+    album_overrides = relationship('AlbumOverride', back_populates='user')
 
     spotify_id=db.Column(db.String(255), unique=True)
     spotify_display_name=db.Column(db.String(255))
@@ -72,6 +72,8 @@ class Album(Base):
     icon_uri = db.Column(db.String(255))
     spotify_id = db.Column(db.String(255), unique=True)
 
+    album_overrides = relationship('AlbumOverride', back_populates='album')
+
 class Artist(Base):
     __tablename__ = 'artists'
 
@@ -98,6 +100,25 @@ class AlbumArtists(Base):
 
     album_id = db.Column('album_id', db.Integer, db.ForeignKey('albums.id'))
     artist_id = db.Column('artist_id', db.Integer, db.ForeignKey('artists.id'))
+
+class AlbumOverride(Base):
+    __tablename__ = 'album_overrides'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    album_id = db.Column(db.Integer, db.ForeignKey('albums.id'))
+
+    user = relationship('User', back_populates='album_overrides')
+    album = relationship('Album', back_populates='album_overrides')
+
+    release_date = db.Column(db.Date)
+    completion_date = db.Column(db.DateTime)
+    hidden = db.Column(db.Boolean)
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'album_id', name='uq_user_album_override'),
+    )
 
 engine = db.create_engine("sqlite:///stat_tracker.db", echo=False)
 
