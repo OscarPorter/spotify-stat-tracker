@@ -141,7 +141,7 @@ def init_db():
             ))
 
 
-def import_listen_history(data, user_id=1):
+def import_listen_history(data, user_id):
     with Session.begin() as session:
         session.query(Stream).filter(Stream.user_id == user_id).delete(
             synchronize_session=False
@@ -188,6 +188,26 @@ def import_listen_history(data, user_id=1):
                 incognito_mode=stream['incognito_mode']
                 )
                 session.add(stream_entry)
+
+
+def spotify_login(data):
+    with Session.begin() as session:
+        user = session.query(User).filter(User.spotify_id == data['account_id']).first()
+        print(user)
+        if user:
+            user.spotify_display_name = data['display_name']
+            user.spotify_icon_url = data['images'][0]['url']
+            return user.id
+        
+        user = User(
+            spotify_id=data['account_id'],
+            spotify_display_name=data['display_name'],
+            spotify_icon_url=data['images'][0]['url']
+        )
+        session.add(user)
+        session.flush()
+        print(user)
+        return user.id
 
 
 def parse_release_date(value):
@@ -331,7 +351,7 @@ def get_first_listens(session, user_id):
     return first_listens
 
 
-def get_completed_albums(user_id=1, sort_by='release_date'):
+def get_completed_albums(user_id, sort_by='release_date'):
     with Session() as session:
         first_listens = get_first_listens(session, user_id)
 
@@ -420,7 +440,7 @@ def get_total_tracks(user_id):
         return total or 0
     
 
-def get_overview(user_id=1):
+def get_overview(user_id):
     return {
         'ms_played': get_total_ms_played(user_id),
         'streams': get_total_streams(user_id),
@@ -431,4 +451,4 @@ def get_overview(user_id=1):
 
 
 if __name__ == '__main__':
-    print(get_overview())
+    print(spotify_login('kPVpV9MH9g'))

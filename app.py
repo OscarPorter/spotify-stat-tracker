@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 import json, urllib, uuid, requests, time
 
-from models import init_db, import_listen_history, fetch_all_missing_data, get_completed_albums, get_overview
+from models import init_db, import_listen_history, fetch_all_missing_data, get_completed_albums, get_overview, spotify_login
 
 load_dotenv()
 
@@ -79,9 +79,19 @@ def get_access_token(authorization_code:str):
     raise Exception ('Failed to obtain Access token')
 
 
-def get_user():
-    #TODO: Make this return the user_id tied to the spotify_id given by https://api.spotify.com/v1/me
-    return 1
+def fetch_current_user_data():
+    url = 'https://api.spotify.com/v1/me'
+    headers = {'Authorization': f'Bearer {session.get('token')}'}
+    response = requests.get(url, headers=headers)
+    data = response.json()
+    if data.get('error'):
+        raise Exception ('Failed to obtain user data')
+    return data
+
+def update_session(user_data: dict):
+    session['account_id'] = user_data['account_id']
+    session['display_name'] = user_data['display_name']
+    session['image'] = user_data['images'][0]['url']
 
 
 @app.route('/callback')
@@ -93,7 +103,22 @@ def callback():
     except:
         return redirect('/login')
     session['token'] = credentials['access_token']
-    return redirect('/1')
+
+    try:
+        user_data = fetch_current_user_data()
+    except:
+        return redirect('/logout')
+
+    session['user_id'] = spotify_login(user_data)
+
+    #TODO use session['account_id'] to find equal account_id in user table and return user_id and put it in session
+    return redirect(f'/{session.get('user_id')}')
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
 
 
 @app.route('/settings')
@@ -146,7 +171,7 @@ def stats(user):
 
     return render_template(
         'stats.html',
-        overview_section=Markup(_render_overview()),
+        overview_section=Markup(_render_overview(user)),
         album_sections=Markup(_render_album_sections(completed_albums, group_by=group_by, sort_key=sort_key))
     )
 
@@ -227,12 +252,13 @@ def _render_album_sections(completed_albums, group_by='decade', sort_key='releas
     content += """
                     </div>
                 </section>
+                <hr>
     """
     return content
 
 
-def _render_overview():
-    d = get_overview()
+def _render_overview(user):
+    d = get_overview(user)
     return f'''
         <div class='overview-grid'>
         <div><h2>{format(d['streams'], ',')}</h2><h3>streams</h3></div>
@@ -253,14 +279,7 @@ def fetch_track(id):
     response = requests.get(track_url, headers=headers)
     time.sleep(0.5)
     return response.json()
-
-
-def fetch_profile():
-    url = 'https://api.spotify.com/v1/me'
-    headers = {'Authorization': f'Bearer {session.get('token')}'}
-    response = requests.get(url, headers=headers)
-    return response.json()
-
+    
     
 if __name__ == '__main__':
    app.run(debug=True)
