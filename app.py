@@ -37,7 +37,7 @@ def write_json_to_db():
         except (TypeError, ValueError, UnicodeDecodeError, json.JSONDecodeError):
             return jsonify(error="Only JSON files are accepted"), 400
 
-    import_listen_history(data)
+    import_listen_history(data, session['user_id'])
 
 
 @app.route('/')
@@ -147,14 +147,14 @@ def imports_post():
 
     if action == 'upload_history':
         write_json_to_db()
-        return '<p>Files imported</p>'
+        return redirect('/settings/imports')
 
     elif action == 'fetch_spotify_data':
         try:
             fetch_all_missing_data(fetch_track)
         except Exception as error:
             return f'<p>{error}</p>'
-        return '<p>All done!</p>'
+        return redirect('/settings/imports')
     
 
 @app.route('/<user>')
