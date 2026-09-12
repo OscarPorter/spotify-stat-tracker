@@ -5,6 +5,7 @@ from itertools import groupby
 
 Base = declarative_base()
 
+
 class User(Base):
     __tablename__ = 'users'
 
@@ -15,6 +16,7 @@ class User(Base):
     spotify_id=db.Column(db.String(255), unique=True)
     spotify_display_name=db.Column(db.String(255))
     spotify_icon_url=db.Column(db.String(255))
+
 
 class Stream(Base):
     __tablename__ = 'streams'
@@ -56,6 +58,7 @@ class Track(Base):
     explicit = db.Column(db.Boolean, nullable=True)
     spotify_id = db.Column(db.String(255), unique=True)
 
+
 class Album(Base):
     __tablename__ = 'albums'
 
@@ -74,6 +77,7 @@ class Album(Base):
 
     album_overrides = relationship('AlbumOverride', back_populates='album')
 
+
 class Artist(Base):
     __tablename__ = 'artists'
 
@@ -85,6 +89,7 @@ class Artist(Base):
     name = db.Column(db.String(255))
     spotify_id = db.Column(db.String(255), unique=True)
 
+
 class TrackArtists(Base):
     __tablename__ = 'track_artists'
 
@@ -93,6 +98,7 @@ class TrackArtists(Base):
     track_id = db.Column('track_id', db.Integer, db.ForeignKey('tracks.id'))
     artist_id = db.Column('artist_id', db.Integer, db.ForeignKey('artists.id'))
 
+
 class AlbumArtists(Base):
     __tablename__ = 'album_artists'
 
@@ -100,6 +106,7 @@ class AlbumArtists(Base):
 
     album_id = db.Column('album_id', db.Integer, db.ForeignKey('albums.id'))
     artist_id = db.Column('artist_id', db.Integer, db.ForeignKey('artists.id'))
+
 
 class AlbumOverride(Base):
     __tablename__ = 'album_overrides'
@@ -132,6 +139,7 @@ def init_db():
             connection.execute(db.text(
                 'ALTER TABLE albums ADD COLUMN album_type VARCHAR(50)'
             ))
+
 
 def import_listen_history(data, user_id=1):
     with Session.begin() as session:
@@ -181,6 +189,7 @@ def import_listen_history(data, user_id=1):
                 )
                 session.add(stream_entry)
 
+
 def parse_release_date(value):
     if not value:
         return None
@@ -195,6 +204,7 @@ def parse_release_date(value):
         return date.fromisoformat(value)
     except ValueError:
         return None
+
 
 def get_or_create_album(session, album_data):
     if not album_data or not album_data.get('id'):
@@ -217,6 +227,7 @@ def get_or_create_album(session, album_data):
 
     return album
 
+
 def get_or_create_artist(session, artist_data):
     spotify_id = artist_data.get('id')
     if not spotify_id:
@@ -235,6 +246,7 @@ def get_or_create_artist(session, artist_data):
         artist.icon_uri = images[0]['url']
 
     return artist
+
 
 def fetch_all_missing_data(fetch_track):
     with Session() as session:
@@ -383,6 +395,7 @@ def get_total_streams(user_id):
 
 def get_total_albums(user_id):
     return len(get_completed_albums(user_id))
+
 
 def get_total_artists(user_id):
     completed = get_completed_albums(user_id)

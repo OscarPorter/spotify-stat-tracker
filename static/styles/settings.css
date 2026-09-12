@@ -4,10 +4,75 @@ body {
 }
 
 .content {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  margin-top: -100px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-top: -100px;
+}
+
+.settings-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.settings-bar {
+    width: 220px;
+    min-width: 220px;
+    flex-direction: column;
+}
+
+.settings-links {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.settings-bar form button {
+    width: 100%;
+    display: block;
+    text-align: left;
+    background: none;
+    border: none;
+    color: rgb(156, 156, 156);
+
+    padding: 10px 20px;
+    margin: 0px 5px;
+    text-decoration: none;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.settings-bar form button:hover {
+    background-color: rgb(24, 24, 28);
+}
+
+.submit-button {
+    padding: 10px 20px;
+    margin: 0px 5px;
+    background-color: rgb(24, 24, 28);
+    border: none;
+    color: white;
+    text-decoration: none;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.submit-button:hover {
+    color: #1db954
+}
+
+.settings-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+hr {
+  color: white;
+  width: 100%;
 }

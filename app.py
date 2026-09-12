@@ -44,6 +44,7 @@ def write_json_to_db():
 def index():
     return render_template('index.html')
 
+
 @app.route('/login')
 def login():
     return render_template('login.html')
@@ -95,13 +96,28 @@ def callback():
     return redirect('/1')
 
 
-@app.route('/settings', methods=['GET'])
-def settings_get():
-    return render_template('settings.html')
+@app.route('/settings')
+def settings():
+    return redirect('/settings/profile')
 
-    
-@app.route('/settings', methods=['POST'])
-def settings_post():
+
+@app.route('/settings/profile')
+def profile():
+    return render_template('settings/profile.html')
+
+
+@app.route('/settings/overrides')
+def overrides():
+    return render_template('settings/overrides.html')
+
+
+@app.route('/settings/imports', methods=['GET'])
+def imports_get():
+    return render_template('settings/imports.html')
+
+
+@app.route('/settings/imports', methods=['POST'])
+def imports_post():
     action = request.form.get('submit_action')
 
     if action == 'upload_history':
@@ -114,7 +130,7 @@ def settings_post():
         except Exception as error:
             return f'<p>{error}</p>'
         return '<p>All done!</p>'
-
+    
 
 @app.route('/<user>')
 def stats(user):
@@ -133,6 +149,7 @@ def stats(user):
         overview_section=Markup(_render_overview()),
         album_sections=Markup(_render_album_sections(completed_albums, group_by=group_by, sort_key=sort_key))
     )
+
 
 @app.route('/exceptions', methods=['POST'])
 def add_exception():

@@ -1,0 +1,16 @@
+{% block nav %}
+<nav class="settings-bar">
+    <h2>Settings</h2>
+    <div class="settings-links">
+        <form action="{{ url_for('profile') }}">
+            <button>Profile</button>
+        </form>
+        <form action="{{ url_for('overrides') }}">
+            <button>Overrides</button>
+        </form>
+        <form action="{{ url_for('imports_get') }}">
+            <button>Imports</button>
+        </form>
+    </div>
+</nav>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "navbar.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/settings.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+<div class="settings-layout">
+    {% include "settings/settings_nav.html" %}
+
+    <div class="settings-content">
+        <h1>Imports</h1>
+
+        <form action="/settings/imports" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="submit_action" value="upload_history">
+            <input type="file"
+                name="data_json_files"
+                accept=".json,application/json"
+                multiple
+                required>
+            <button class="submit-button" type="submit">Send JSON files</button>
+        </form>
+
+        <hr>
+
+        <form action="/settings/imports" method="post">
+            <input type="hidden" name="submit_action" value="fetch_spotify_data">
+            <button class="submit-button" type="submit">Update stats</button>
+        </form>
+        
+    </div>
+</div>
+</div>
+{% endblock %}
