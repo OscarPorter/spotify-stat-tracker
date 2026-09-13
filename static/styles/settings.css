@@ -76,3 +76,31 @@ hr {
   color: white;
   width: 100%;
 }
+
+.profile-image {
+    border-radius: 50%; 
+}
+
+.profile-content {
+    display: flex;
+}
+
+.custom-details {
+    margin-left: 40px;
+}
+
+.text-box {
+    margin-top: 5px;
+    background-color: rgb(24, 24, 28);
+    resize: none;
+    border: none;
+    color: white;
+    font-weight: normal;
+    border-radius: 5px;
+    padding: 5px;
+}
+
+.text-box:focus {
+    outline-color:rgb(156, 156, 156);
+    outline-style: solid;
+}

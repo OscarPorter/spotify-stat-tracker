@@ -36,7 +36,7 @@ body {
     cursor: pointer;
 }
 
-.login-button {
+.green-button {
     background-color: rgb(24, 24, 28);
     border: none;
     color: black;

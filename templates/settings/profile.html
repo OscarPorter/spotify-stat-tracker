@@ -13,6 +13,23 @@
 
     <div class="settings-content">
         <h1>Profile</h1>
+        <div class="profile-content">
+            <div class="spotify-details">
+                <img class="profile-image" src="{{ session['profile_image'] }}" width="150" height="150">
+                <h3>{{ session['display_name'] }}</h3>
+            </div>
+            <div class="custom-details">
+                <form action="/settings/profile" method="post">
+                    <label for="custom-url">Custom url</label><br>
+                    <input class="text-box" type="text" id="custom-url" name="custom-url"><br><br>
+                    
+                    <label for="bio">Bio</label><br>
+                    <textarea class="text-box" type="text" id="bio" name="bio" rows="8" cols="100"></textarea><br><br>
+
+                    <button class="green-button">Apply</button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 </div>
