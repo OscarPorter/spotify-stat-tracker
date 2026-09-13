@@ -38,8 +38,8 @@ def write_json_to_db():
             return jsonify(error="Only JSON files are accepted"), 400
 
     import_listen_history(data, session['user_id'])
-
-
+    
+    
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -88,11 +88,6 @@ def fetch_current_user_data():
         raise Exception ('Failed to obtain user data')
     return data
 
-def update_session(user_data: dict):
-    session['account_id'] = user_data['account_id']
-    session['display_name'] = user_data['display_name']
-    session['image'] = user_data['images'][0]['url']
-
 
 @app.route('/callback')
 def callback():
@@ -110,6 +105,8 @@ def callback():
         return redirect('/logout')
 
     session['user_id'] = spotify_login(user_data)
+    session['display_name'] = user_data['display_name']
+    session['profile_image'] = user_data['images'][0]['url']
 
     #TODO use session['account_id'] to find equal account_id in user table and return user_id and put it in session
     return redirect(f'/{session.get('user_id')}')
@@ -128,16 +125,22 @@ def settings():
 
 @app.route('/settings/profile')
 def profile():
+    if not session.get('user_id'):
+        return redirect('/login')
     return render_template('settings/profile.html')
 
 
 @app.route('/settings/overrides')
 def overrides():
+    if not session.get('user_id'):
+        return redirect('/login')
     return render_template('settings/overrides.html')
 
 
 @app.route('/settings/imports', methods=['GET'])
 def imports_get():
+    if not session.get('user_id'):
+        return redirect('/login')
     return render_template('settings/imports.html')
 
 

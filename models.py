@@ -193,7 +193,6 @@ def import_listen_history(data, user_id):
 def spotify_login(data):
     with Session.begin() as session:
         user = session.query(User).filter(User.spotify_id == data['account_id']).first()
-        print(user)
         if user:
             user.spotify_display_name = data['display_name']
             user.spotify_icon_url = data['images'][0]['url']
@@ -206,7 +205,6 @@ def spotify_login(data):
         )
         session.add(user)
         session.flush()
-        print(user)
         return user.id
 
 
@@ -448,7 +446,3 @@ def get_overview(user_id):
         'tracks': get_total_tracks(user_id),
         'artists': get_total_artists(user_id)
     }
-
-
-if __name__ == '__main__':
-    print(spotify_login('kPVpV9MH9g'))

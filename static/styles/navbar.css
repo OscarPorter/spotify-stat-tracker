@@ -36,17 +36,6 @@ body {
     cursor: pointer;
 }
 
-.settings-button {
-    background-color: rgb(24, 24, 28);
-    border: none;
-    color: rgb(156, 156, 156);
-    padding: 10px 20px;
-    margin: 0px 5px;
-    text-decoration: none;
-    border-radius: 12px;
-    cursor: pointer;
-}
-
 .login-button {
     background-color: rgb(24, 24, 28);
     border: none;
@@ -59,3 +48,41 @@ body {
     cursor: pointer;
 }
 
+.drop-trigger {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+}
+
+.drop-trigger img {
+    border-radius: 50%; 
+}
+
+.dropdown {
+    position: relative;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #18181C;
+  width: 200%;
+  padding: 10px;
+}
+
+.dropdown:focus-within .dropdown-content {
+  display: block;
+}
+
+.dropdown-button {
+    background: none;
+    border: none;
+    color: white;
+    text-decoration: none;
+    cursor: pointer;
+    width: 100%;
+    font-size: 15px;
+    text-align: left;
+    margin: 5px
+}

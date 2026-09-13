@@ -12,13 +12,37 @@
                 <button class="site-name"><h2>Spotify Album Tracker</h2></button>
             </form>
 
+            {% if not session.user_id %}
             <form action="{{ url_for('login') }}" method="get">
                 <button class="login-button">Login</button>
             </form>
+            {% endif %}
 
-            <form action="{{ url_for('settings') }}" method="get">
-                <button class="settings-button" type="submit">Settings</button>
-            </form>
+            {% if session.user_id %}
+            <div class="dropdown">
+                <button class="drop-trigger" type="button">
+                    <img src="{{ session['profile_image'] }}" width="40" height="40">
+                </button>
+                
+                
+                <div class="dropdown-content">
+                    <form action="{{ url_for('stats',user=session['user_id']) }}" method="get">
+                        <button class="dropdown-button" type="submit">My page</button>
+                    </form>
+
+                    <form action="{{ url_for('settings') }}" method="get">
+                        <button class="dropdown-button" type="submit">Settings</button>
+                    </form>
+
+                    <hr>
+
+                    <form action="{{ url_for('logout') }}" method="get">
+                        <button class="dropdown-button" type="submit">Log out</button>
+                    </form>
+                </div>            
+            </div>
+           
+            {% endif %}
         </div>
     </nav>
     {% block content %}{% endblock %}
