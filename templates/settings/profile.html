@@ -22,7 +22,7 @@
                 <form action="/settings/profile" method="post">
                     <input type="hidden" name="submit_action" value="update_details">
                     <label for="custom-url">Custom url</label><br>
-                    <input class="text-box" type="text" id="custom-url" name="custom-url" maxlength="30" value="{{ custom_url }}"><br><br>
+                    <input class="text-box" type="text" id="custom-url" name="custom-url" maxlength="30" value="{{ custom_url }}" required/><br><br>
                     
                     <label for="bio">Bio</label><br>
                     <textarea class="text-box" type="text" id="bio" name="bio" rows="8" cols="100" maxlength="512">{{ bio }}</textarea><br><br>

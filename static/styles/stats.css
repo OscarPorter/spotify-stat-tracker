@@ -131,3 +131,17 @@ hr {
     content: "-";
 }
 
+.profile-section {
+    display: flex;
+    margin: 100px 20px 40px 0px;
+}
+
+.profile-image {
+    border-radius: 50%; 
+    margin-right: 40px;
+}
+
+.profile-text {
+    width: 100%;
+    overflow-wrap: anywhere;
+}

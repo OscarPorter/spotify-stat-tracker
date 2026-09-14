@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 import json, urllib, uuid, requests, time
 
-from models import init_db, import_listen_history, fetch_all_missing_data, get_completed_albums, get_overview, spotify_login, update_profile_content, delete_account, get_profile_content, url_to_id, id_to_url
+from models import init_db, import_listen_history, fetch_all_missing_data, get_completed_albums, get_listening_stats, spotify_login, update_profile_content, delete_account, get_profile_content, url_to_id, id_to_url
 
 load_dotenv()
 
@@ -108,8 +108,7 @@ def callback():
     session['display_name'] = user_data['display_name']
     session['profile_image'] = user_data['images'][0]['url']
 
-    #TODO use session['account_id'] to find equal account_id in user table and return user_id and put it in session
-    return redirect(f'/{session.get('user_id')}')
+    return redirect(f'/stats')
 
 
 @app.route('/logout')
@@ -128,7 +127,7 @@ def profile_get():
     if not session.get('user_id'):
         return redirect('/login')
 
-    _, custom_url, bio = get_profile_content(session['user_id'])
+    _, custom_url, bio, _ = get_profile_content(session['user_id'])
     return render_template(
         'settings/profile.html',
         custom_url = custom_url,
@@ -189,6 +188,7 @@ def my_stats():
     url = id_to_url(session['user_id'])
     return redirect(f'stats/{url}')
 
+
 @app.route('/stats/<url>')
 def stats(url):
     try:
@@ -208,6 +208,7 @@ def stats(url):
 
     return render_template(
         'stats.html',
+        profile_section=Markup(_render_profile(user)),
         overview_section=Markup(_render_overview(user)),
         album_sections=Markup(_render_album_sections(completed_albums, group_by=group_by, sort_key=sort_key))
     )
@@ -295,18 +296,29 @@ def _render_album_sections(completed_albums, group_by='decade', sort_key='releas
 
 
 def _render_overview(user):
-    d = get_overview(user)
+    stats = get_listening_stats(user)
     return f'''
         <div class='overview-grid'>
-        <div><h2>{format(d['streams'], ',')}</h2><h3>streams</h3></div>
-        <div><h2>{format(d['ms_played']//3600_000, ',')}</h2><h3>hours streamed</h3></div>
+        <div><h2>{format(stats['streams'], ',')}</h2><h3>streams</h3></div>
+        <div><h2>{format(stats['ms_played']//3600_000, ',')}</h2><h3>hours streamed</h3></div>
         </div>
 
         <div class='overview-grid'>
-        <div><h2>{format(d['tracks'], ',')}</h2><h3>tracks</h3></div>
-        <div><h2>{format(d['albums'], ',')}</h2><h3>albums</h3></div>
-        <div><h2>{format(d['artists'], ',')}</h2><h3>artists</h3></div>
+        <div><h2>{format(stats['tracks'], ',')}</h2><h3>tracks</h3></div>
+        <div><h2>{format(stats['albums'], ',')}</h2><h3>albums</h3></div>
+        <div><h2>{format(stats['artists'], ',')}</h2><h3>artists</h3></div>
         </div>
+    '''
+
+
+def _render_profile(user):
+    name, _, bio, icon_url = get_profile_content(user)
+    return f'''
+    <img class="profile-image" src="{icon_url}" width="250" height="250">
+    <div class="profile-text">
+    <h1 class="title-text">{name}'s Albums</h1>
+    <p>{bio}</p>
+    </div>
     '''
 
 

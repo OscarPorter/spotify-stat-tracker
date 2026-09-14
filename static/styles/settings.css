@@ -77,12 +77,12 @@ hr {
   width: 100%;
 }
 
-.profile-image {
-    border-radius: 50%; 
-}
-
 .profile-content {
     display: flex;
+}
+
+.profile-image {
+    border-radius: 50%;
 }
 
 .custom-details {
@@ -97,8 +97,9 @@ hr {
     color: white;
     font-weight: normal;
     border-radius: 5px;
-    padding: 5px;
+    padding: 10px;
     width: 100%;
+    font-size: medium;
 }
 
 .text-box:focus {

@@ -233,7 +233,7 @@ def update_profile_content(user_id, custom_url, bio):
 def get_profile_content(user_id):
     with Session.begin() as session:
         user = session.query(User).filter(User.id == user_id).first()
-        return user.spotify_display_name, user.custom_url, user.bio
+        return user.spotify_display_name, user.custom_url, user.bio, user.spotify_icon_url
 
 
 def url_to_id(url):
@@ -488,7 +488,7 @@ def get_total_tracks(user_id):
         return total or 0
     
 
-def get_overview(user_id):
+def get_listening_stats(user_id):
     return {
         'ms_played': get_total_ms_played(user_id),
         'streams': get_total_streams(user_id),
@@ -496,7 +496,3 @@ def get_overview(user_id):
         'tracks': get_total_tracks(user_id),
         'artists': get_total_artists(user_id)
     }
-
-if __name__ == '__main__':
-    init_db()
-    User.__table__.drop(engine)
