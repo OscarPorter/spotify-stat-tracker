@@ -98,9 +98,22 @@ hr {
     font-weight: normal;
     border-radius: 5px;
     padding: 5px;
+    width: 100%;
 }
 
 .text-box:focus {
     outline-color:rgb(156, 156, 156);
     outline-style: solid;
+}
+
+.danger-button {
+    background-color: rgb(24, 24, 28);
+    border: none;
+    color: black;
+    background-color: red;
+    padding: 10px 20px;
+    margin: 0px 5px;
+    border-radius: 12px;
+    text-decoration: none;
+    cursor: pointer;
 }

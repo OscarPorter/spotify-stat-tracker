@@ -3,6 +3,11 @@ from sqlalchemy.orm import Mapped, mapped_column, declarative_base, relationship
 from datetime import datetime, date
 from itertools import groupby
 
+import secrets
+import string
+
+ALLOWED = string.ascii_letters + string.digits
+
 Base = declarative_base()
 
 
@@ -13,9 +18,12 @@ class User(Base):
     streams = relationship('Stream', back_populates='user')
     album_overrides = relationship('AlbumOverride', back_populates='user')
 
-    spotify_id=db.Column(db.String(255), unique=True)
-    spotify_display_name=db.Column(db.String(255))
-    spotify_icon_url=db.Column(db.String(255))
+    spotify_id = db.Column(db.String(255), unique=True)
+    spotify_display_name = db.Column(db.String(255))
+    spotify_icon_url = db.Column(db.String(255))
+
+    custom_url = db.Column(db.String(30), unique=True)
+    bio = db.Column(db.String(512))
 
 
 class Stream(Base):
@@ -38,24 +46,25 @@ class Stream(Base):
     reason_end = db.Column(db.String(50))
     incognito_mode = db.Column(db.Boolean)
 
+
 class Track(Base):
     # Largely nullable - except for ID and Spotify ID. The rest will be filled out after the Spotify API calls.
     __tablename__ = 'tracks'
 
     id = db.Column(db.Integer, primary_key=True)
 
-    album_id: Mapped[int] = mapped_column(db.ForeignKey('albums.id'), nullable=True)
+    album_id: Mapped[int] = mapped_column(db.ForeignKey('albums.id'))
     album: Mapped['Album'] = relationship(back_populates='tracks')
 
     streams: Mapped[list['Stream']] = relationship()
 
     artists = relationship('Artist', secondary='track_artists', back_populates='tracks')
 
-    name = db.Column(db.String(255), nullable=True)
-    duration_ms = db.Column(db.Integer, nullable=True)
-    disc_number = db.Column(db.Integer, nullable=True)
-    track_number = db.Column(db.Integer, nullable=True)
-    explicit = db.Column(db.Boolean, nullable=True)
+    name = db.Column(db.String(255))
+    duration_ms = db.Column(db.Integer)
+    disc_number = db.Column(db.Integer)
+    track_number = db.Column(db.Integer)
+    explicit = db.Column(db.Boolean)
     spotify_id = db.Column(db.String(255), unique=True)
 
 
@@ -134,11 +143,6 @@ Session = sessionmaker(bind=engine)
 def init_db():
     Base.metadata.create_all(engine)
     album_columns = {column['name'] for column in db.inspect(engine).get_columns('albums')}
-    if 'album_type' not in album_columns:
-        with engine.begin() as connection:
-            connection.execute(db.text(
-                'ALTER TABLE albums ADD COLUMN album_type VARCHAR(50)'
-            ))
 
 
 def import_listen_history(data, user_id):
@@ -190,6 +194,14 @@ def import_listen_history(data, user_id):
                 session.add(stream_entry)
 
 
+def generate_unique_custom_url(session, length=30):
+    while True:
+        code = ''.join(secrets.choice(ALLOWED) for _ in range(length))
+        existing = session.query(User).filter(User.custom_url == code).first()
+        if not existing:
+            return code
+
+
 def spotify_login(data):
     with Session.begin() as session:
         user = session.query(User).filter(User.spotify_id == data['account_id']).first()
@@ -199,13 +211,51 @@ def spotify_login(data):
             return user.id
         
         user = User(
-            spotify_id=data['account_id'],
-            spotify_display_name=data['display_name'],
-            spotify_icon_url=data['images'][0]['url']
+            spotify_id = data['account_id'],
+            spotify_display_name = data['display_name'],
+            spotify_icon_url = data['images'][0]['url'],
+            custom_url = generate_unique_custom_url(session, 30),
+            bio = None
         )
+
         session.add(user)
         session.flush()
         return user.id
+
+
+def update_profile_content(user_id, custom_url, bio):
+    with Session.begin() as session:
+        user = session.query(User).filter(User.id == user_id).first()
+        user.custom_url = custom_url
+        user.bio = bio
+
+
+def get_profile_content(user_id):
+    with Session.begin() as session:
+        user = session.query(User).filter(User.id == user_id).first()
+        return user.spotify_display_name, user.custom_url, user.bio
+
+
+def url_to_id(url):
+    with Session.begin() as session:
+        user = session.query(User).filter(User.custom_url == url).first()
+        return user.id
+
+
+def id_to_url(id):
+    with Session.begin() as session:
+        user = session.query(User).filter(User.id == id).first()
+        return user.custom_url
+
+
+def delete_account(user_id):
+    with Session.begin() as session:
+        session.query(Stream).filter(Stream.user_id == user_id).delete(
+            synchronize_session=False
+        )
+        user = session.query(User).filter(User.id == user_id).first()
+        if user:
+            session.delete(user)
 
 
 def parse_release_date(value):
@@ -446,3 +496,7 @@ def get_overview(user_id):
         'tracks': get_total_tracks(user_id),
         'artists': get_total_artists(user_id)
     }
+
+if __name__ == '__main__':
+    init_db()
+    User.__table__.drop(engine)

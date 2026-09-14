@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 import json, urllib, uuid, requests, time
 
-from models import init_db, import_listen_history, fetch_all_missing_data, get_completed_albums, get_overview, spotify_login
+from models import init_db, import_listen_history, fetch_all_missing_data, get_completed_albums, get_overview, spotify_login, update_profile_content, delete_account, get_profile_content, url_to_id, id_to_url
 
 load_dotenv()
 
@@ -123,12 +123,36 @@ def settings():
     return redirect('/settings/profile')
 
 
-@app.route('/settings/profile')
-def profile():
+@app.route('/settings/profile', methods=['GET'])
+def profile_get():
     if not session.get('user_id'):
         return redirect('/login')
-    return render_template('settings/profile.html')
 
+    _, custom_url, bio = get_profile_content(session['user_id'])
+    return render_template(
+        'settings/profile.html',
+        custom_url = custom_url,
+        bio = bio
+    )
+
+
+@app.route('/settings/profile', methods=['POST'])
+def profile_post():
+    action = request.form.get('submit_action')
+    if action == 'update_details':
+        update_profile_content(
+            session['user_id'],
+            request.form.get('custom-url'),
+            request.form.get('bio')
+        )
+        return redirect('/settings/profile')
+    
+    elif action == 'delete_account':
+        delete_account(
+            session['user_id']
+        )
+        return redirect('/logout')
+    
 
 @app.route('/settings/overrides')
 def overrides():
@@ -160,8 +184,18 @@ def imports_post():
         return redirect('/settings/imports')
     
 
-@app.route('/<user>')
-def stats(user):
+@app.route('/stats')
+def my_stats():
+    url = id_to_url(session['user_id'])
+    return redirect(f'stats/{url}')
+
+@app.route('/stats/<url>')
+def stats(url):
+    try:
+        user = url_to_id(url)
+    except AttributeError:
+        return redirect('/')
+    
     sort_order = request.args.get('sort-order', 'date-released')
     group_by = request.args.get('group-by', 'decade')
 
