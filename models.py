@@ -1,5 +1,5 @@
 import sqlalchemy as db
-from sqlalchemy.orm import Mapped, mapped_column, declarative_base, relationship, sessionmaker, contains_eager
+from sqlalchemy.orm import Mapped, mapped_column, declarative_base, relationship, sessionmaker, contains_eager, joinedload
 from datetime import datetime, date
 from itertools import groupby
 
@@ -130,7 +130,7 @@ class AlbumOverride(Base):
 
     release_date = db.Column(db.Date)
     completion_date = db.Column(db.DateTime)
-    hidden = db.Column(db.Boolean)
+    hidden = db.Column(db.Boolean, default=False, nullable=False)
 
     __table_args__ = (
         db.UniqueConstraint('user_id', 'album_id', name='uq_user_album_override'),
@@ -496,3 +496,37 @@ def get_listening_stats(user_id):
         'tracks': get_total_tracks(user_id),
         'artists': get_total_artists(user_id)
     }
+
+
+def add_override(user_id, album_id):
+    with Session.begin() as session:
+        override = AlbumOverride(
+            user_id = user_id,
+            album_id = album_id
+        )
+        session.add(override)
+
+
+def edit_override(override_id, release_date=None, completion_date=None, hidden=False):
+    with Session.begin() as session:
+        override = session.query(AlbumOverride).filter(AlbumOverride.id == override_id).first()
+        override.release_date = release_date
+        override.completion_date = completion_date
+        override.hidden = hidden
+
+
+def get_overrides(user_id):
+    with Session() as session:
+        return session.query(AlbumOverride).filter(
+            AlbumOverride.user_id == user_id
+        ).options(
+            joinedload(AlbumOverride.album)
+        ).all()
+
+
+def delete_override(override_id):
+    with Session.begin() as session:
+        user = session.query(AlbumOverride).filter(AlbumOverride.id == override_id).first()
+        if user:
+            session.delete(user)
+        

@@ -2,11 +2,16 @@ from flask import Flask, render_template, redirect, request, jsonify, session
 from markupsafe import Markup, escape
 
 import os
+from datetime import date, datetime, time as datetime_time
 from dotenv import load_dotenv
 
 import json, urllib, uuid, requests, time
 
-from models import init_db, import_listen_history, fetch_all_missing_data, get_completed_albums, get_listening_stats, spotify_login, update_profile_content, delete_account, get_profile_content, url_to_id, id_to_url
+from models import (init_db, import_listen_history, fetch_all_missing_data, get_completed_albums, 
+                    get_listening_stats, spotify_login, update_profile_content, delete_account, 
+                    get_profile_content, url_to_id, id_to_url, add_override, get_overrides,
+                    edit_override, delete_override
+)
 
 load_dotenv()
 
@@ -153,11 +158,84 @@ def profile_post():
         return redirect('/logout')
     
 
-@app.route('/settings/overrides')
-def overrides():
+@app.route('/settings/overrides', methods=['GET'])
+def overrides_get():
     if not session.get('user_id'):
         return redirect('/login')
-    return render_template('settings/overrides.html')
+
+    overrides = get_overrides(session['user_id'])
+    return render_template('settings/overrides.html', override_options=Markup(_render_overrides(overrides)))
+
+
+@app.route('/settings/overrides', methods=['POST'])
+def overrides_post():
+    action = request.form.get('submit_action')
+    override_id = request.form.get('override_id')
+
+    if action == 'edit_override':
+        release_value = request.form.get('release')
+        completion_value = request.form.get('completion')
+        release_date = date.fromisoformat(release_value) if release_value else None
+        completion_date = (
+            datetime.combine(date.fromisoformat(completion_value), datetime_time.min)
+            if completion_value else None
+        )
+        hidden = request.form.get('hidden') == 'true'
+        edit_override(
+            override_id,
+            release_date=release_date, 
+            completion_date=completion_date, 
+            hidden=hidden
+        )
+        
+    elif action == 'delete_override':
+        delete_override(
+            override_id
+        )
+
+    return redirect('/settings/overrides')
+
+
+def _render_overrides(overrides):
+    content = '<hr>'
+    for override in overrides:
+        content += f'''
+            <div>
+                <form style="display: inline-block;" action="/settings/overrides" method="post">
+                    <input type="hidden" name="submit_action" value="edit_override">
+                    <input type="hidden" name="override_id" value="{override.id}">
+
+                    <img src="{escape(override.album.icon_uri)}" alt="Album cover for {escape(override.album.name)}" width="65" height="65">
+
+                    <label for="release-{override.id}">Release date: </label>
+                    <input type="date" id="release-{override.id}" name="release" value="{_format_date_input(override.release_date)}">
+
+                    <label for="completion-{override.id}">Completion date: </label>
+                    <input type="date" id="completion-{override.id}" name="completion" value="{_format_date_input(override.completion_date)}">
+        
+                    <label for="hidden-{override.id}">Hidden: </label>
+                    <input style="display: inline-block;" type="checkbox" id="hidden-{override.id}" name="hidden" value="true" {'checked' if override.hidden else ''}>
+
+                    <button type="submit">Update</button>
+                </form>
+                <form style="display: inline-block;" action="/settings/overrides" method="post">
+                    <input type="hidden" name="submit_action" value="delete_override">
+                    <input type="hidden" name="override_id" value="{override.id}">
+                    <button type="submit">Delete</button>
+                </form>
+                <hr>
+            </div>
+
+        '''
+    return content
+
+
+def _format_date_input(value):
+    if value is None:
+        return ''
+    if isinstance(value, datetime):
+        value = value.date()
+    return value.isoformat()
 
 
 @app.route('/settings/imports', methods=['GET'])
@@ -217,8 +295,13 @@ def stats(url):
 @app.route('/exceptions', methods=['POST'])
 def add_exception():
     album_id = request.form.get('album_id')
-    print(album_id)
+    try:
+        add_override(session['user_id'], album_id)
+    except:
+        return redirect(request.referrer or '/')
+
     return redirect(request.referrer or '/')
+
 
 def _group_label(item_date, group_by='decade'):
     if item_date is None:
