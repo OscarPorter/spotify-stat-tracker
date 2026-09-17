@@ -399,11 +399,10 @@ def get_first_listens(session, user_id):
     return first_listens
 
 
-def get_completed_albums(user_id, sort_by='release_date'):
-    with Session() as session:
-        first_listens = get_first_listens(session, user_id)
+def get_album_completion_dates(session, user_id):
+    first_listens = get_first_listens(session, user_id)
 
-        completion_dates = (
+    return (
         session.query(
             first_listens.c.album_id,
             db.func.max(first_listens.c.first_listened_at).label('completed_at'),
@@ -411,33 +410,66 @@ def get_completed_albums(user_id, sort_by='release_date'):
         )
         .group_by(first_listens.c.album_id)
         .subquery()
+    )
+
+
+def get_album_overrides(session, user_id):
+    return (
+        session.query(
+            AlbumOverride.album_id,
+            AlbumOverride.release_date.label('override_release_date'),
+            AlbumOverride.completion_date.label('override_completion_date'),
+            AlbumOverride.hidden.label('override_hidden')
+        )
+        .filter(AlbumOverride.user_id == user_id)
+        .subquery()
+    )
+
+
+def get_completed_albums(user_id, sort_by='release_date'):
+    with Session() as session:
+        completion_dates = get_album_completion_dates(session, user_id)
+        overrides = get_album_overrides(session, user_id)
+
+        effective_release_date = db.func.coalesce(
+            overrides.c.override_release_date,
+            Album.release_date
+        )
+        effective_completion_date = db.func.coalesce(
+            overrides.c.override_completion_date,
+            completion_dates.c.completed_at
         )
 
         sort_columns = {
-            'release_date': Album.release_date,
-            'completion_date': completion_dates.c.completed_at,
+            'release_date': effective_release_date,
+            'completion_date': effective_completion_date,
         }
-
-        order_column = sort_columns.get(sort_by, Album.release_date)
+        order_column = sort_columns.get(sort_by, effective_release_date)
 
         return (
-        session.query(
-            Album,
-            completion_dates.c.completed_at
-        )
-        .join(completion_dates, completion_dates.c.album_id == Album.id)
-        .join(Album.artists)
-        .options(contains_eager(Album.artists))
-        .filter(
-            Album.total_tracks.is_not(None),
-            db.or_(
-            completion_dates.c.listened_tracks >= Album.total_tracks,
-            completion_dates.c.listened_tracks >= 5,
-            ),
-            Album.album_type.is_not('single')
-        )
-        .order_by(order_column)
-        .all()
+            session.query(
+                Album,
+                effective_completion_date.label('completed_at'),
+                effective_release_date.label('effective_release_date')
+            )
+            .outerjoin(overrides, overrides.c.album_id == Album.id)
+            .join(completion_dates, completion_dates.c.album_id == Album.id)
+            .join(Album.artists)
+            .options(contains_eager(Album.artists))
+            .filter(
+                Album.total_tracks.is_not(None),
+                db.or_(
+                    completion_dates.c.listened_tracks >= Album.total_tracks,
+                    completion_dates.c.listened_tracks >= 5,
+                ),
+                Album.album_type.is_not('single'),
+                db.or_(
+                    overrides.c.override_hidden.is_(None),
+                    overrides.c.override_hidden.is_(False)
+                )
+            )
+            .order_by(order_column)
+            .all()
         )
 
 
@@ -469,7 +501,7 @@ def get_total_artists(user_id):
     completed = get_completed_albums(user_id)
     artist_names = set()
 
-    for album, _ in completed:
+    for album, _, _ in completed:
         for artist in album.artists:
             if artist.name:
                 artist_names.add(artist.name)

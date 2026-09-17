@@ -329,9 +329,9 @@ def _render_album_sections(completed_albums, group_by='decade', sort_key='releas
 
     content = ''
     current_label = None
-    for album, completion_date in completed_albums:
+    for album, completion_date, effective_release_date in completed_albums:
         artists = ', '.join([artist.name for artist in album.artists])
-        group_date = album.release_date if sort_key == 'release_date' else completion_date
+        group_date = effective_release_date if sort_key == 'release_date' else completion_date
         label = _group_label(group_date, group_by)
 
         if current_label is None:
