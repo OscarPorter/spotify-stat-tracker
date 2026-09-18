@@ -201,7 +201,7 @@ def _render_overrides(overrides):
     for override in overrides:
         content += f'''
             <div>
-                <form style="display: inline-block;" action="/settings/overrides" method="post">
+                <form action="/settings/overrides" method="post">
                     <input type="hidden" name="submit_action" value="edit_override">
                     <input type="hidden" name="override_id" value="{override.id}">
 
@@ -214,17 +214,17 @@ def _render_overrides(overrides):
                     <input type="date" id="completion-{override.id}" name="completion" value="{_format_date_input(override.completion_date)}">
         
                     <label for="hidden-{override.id}">Hidden: </label>
-                    <input style="display: inline-block;" type="checkbox" id="hidden-{override.id}" name="hidden" value="true" {'checked' if override.hidden else ''}>
+                    <input type="checkbox" id="hidden-{override.id}" name="hidden" value="true" {'checked' if override.hidden else ''}>
 
                     <button type="submit">Update</button>
                 </form>
-                <form style="display: inline-block;" action="/settings/overrides" method="post">
+                <form action="/settings/overrides" method="post">
                     <input type="hidden" name="submit_action" value="delete_override">
                     <input type="hidden" name="override_id" value="{override.id}">
                     <button type="submit">Delete</button>
                 </form>
-                <hr>
             </div>
+            <hr>
 
         '''
     return content

@@ -118,3 +118,17 @@ hr {
     text-decoration: none;
     cursor: pointer;
 }
+
+.override-list form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.override-list > div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
